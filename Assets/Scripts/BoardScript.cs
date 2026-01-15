@@ -3,18 +3,22 @@ using UnityEngine;
 
 public class BoardScript : MonoBehaviour
 {
-    [SerializeField] int width;
-    [SerializeField] int height;
-    [SerializeField] int maxColors;
     [SerializeField] float blocksDistance; 
     [SerializeField] GameObject[] blockPrefabs;
-    
+
+    private int width;
+    private int height;
+    private int maxColors;
     private float middleOfTheBoardX;
     private float middleOfTheBoardY;
     private NodeScript[,] nodesArray;
 
     private void Start()
     {
+        width = GameManager.instance.GetWidthOfTheBoard();
+        height = GameManager.instance.GetHeightOfTheBoard();
+        maxColors = GameManager.instance.GetMaxColors();
+        if (maxColors > 6) maxColors = 6;
         InitBoard();
     }
 
@@ -23,8 +27,6 @@ public class BoardScript : MonoBehaviour
         nodesArray = new NodeScript[width, height];
         middleOfTheBoardX = (float)(width - 1) / 2;
         middleOfTheBoardY = (float)(height - 1) / 2;
-        if (maxColors > 6)
-            maxColors = 6;
         CreateBoard();
     }
 
@@ -53,7 +55,12 @@ public class BoardScript : MonoBehaviour
             {
                 if (!nodesArray[x, y].visited)
                 {
-                    CheckNeighbour(nodesArray[x, y], nodesArray[x, y].currentBlockType, new MatchedBlocks());
+                    MatchedBlocks matched = new MatchedBlocks();
+                    CheckNeighbour(nodesArray[x, y], nodesArray[x, y].currentBlockType, matched);
+                    foreach (var node in matched.nodes)
+                    {
+                        node.AssignNewMatchedBlocks(matched.countOfBlocks, matched.idOfList);
+                    }
                 }
             }
 
@@ -65,26 +72,19 @@ public class BoardScript : MonoBehaviour
         int xIndex = nodeToScan.xIndex;
         int yIndex = nodeToScan.yIndex;
         if (nodeToScan.currentBlockType != searchingType || nodeToScan.visited)
-        {
             return;
-        }
-        else
-        {
-            nodeToScan.visited = true;
-            list.countOfBlocks++;
 
-            if (xIndex > 0)
-                CheckNeighbour(nodesArray[xIndex - 1, yIndex], searchingType, list);
-            if (yIndex > 0)
-                CheckNeighbour(nodesArray[xIndex, yIndex - 1], searchingType, list);
-            if (xIndex < width - 1)
-                CheckNeighbour(nodesArray[xIndex + 1, yIndex], searchingType, list);
-            if (yIndex < height - 1)
-                CheckNeighbour(nodesArray[xIndex, yIndex + 1], searchingType, list);
-
-            if (nodeToScan.block != null)
-                nodeToScan.AssignNewMatchedBlocks(list.countOfBlocks, list.idOfList);
-        }
+        nodeToScan.visited = true;
+        list.nodes.Add(nodeToScan);
+        list.countOfBlocks++;
+        if (xIndex > 0)
+            CheckNeighbour(nodesArray[xIndex - 1, yIndex], searchingType, list);
+        if (yIndex > 0)
+            CheckNeighbour(nodesArray[xIndex, yIndex - 1], searchingType, list);
+        if (xIndex < width - 1)
+            CheckNeighbour(nodesArray[xIndex + 1, yIndex], searchingType, list);
+        if (yIndex < height - 1)
+            CheckNeighbour(nodesArray[xIndex, yIndex + 1], searchingType, list);
         return;
     }
 }
@@ -93,6 +93,9 @@ public class MatchedBlocks
 {
     public int countOfBlocks;
     public int idOfList;
+
+    public List<NodeScript> nodes = new List<NodeScript>();
+
     static int nextIdOfList = 0;
     public MatchedBlocks()
     {

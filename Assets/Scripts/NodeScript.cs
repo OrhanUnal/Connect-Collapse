@@ -6,6 +6,9 @@ public class NodeScript
 
     private int matchedBlocksId;
     private int blastableNeighbourCount;
+    private int conditionA;
+    private int conditionB;
+    private int conditionC;
 
     public GameObject block;
     public int xIndex;
@@ -21,25 +24,32 @@ public class NodeScript
         xIndex = block.GetComponent<BlockScript>().xIndex;
         yIndex = block.GetComponent<BlockScript>().yIndex;
         visited = false;
+        conditionA = GameManager.instance.GetConditionA();
+        conditionB = GameManager.instance.GetConditionB();
+        conditionC = GameManager.instance.GetConditionC();
     }
 
     public void AssignNewMatchedBlocks(int count, int id)
     {
+        BlockScript blockScript = block.GetComponent<BlockScript>();
         blastableNeighbourCount = count;
         matchedBlocksId = id;
-        switch (blastableNeighbourCount)
+        if (blastableNeighbourCount < conditionA)
         {
-            case 3:
-                Debug.Log("3CONNECT");
-                break;
-            case 4:
-                Debug.Log("4CONNECT");
-                break;
-            case 5:
-                Debug.Log("OHABEABI");
-                break;
+            blockScript.ChangeSprites(BlockScript.SpriteConditions.Default);
         }
-                //switch case that checks a b c from gamemanagaer for sprite
+        else if (blastableNeighbourCount < conditionB)
+        {
+            blockScript.ChangeSprites(BlockScript.SpriteConditions.ConditionA);
+        }
+        else if (blastableNeighbourCount < conditionC)
+        {
+            blockScript.ChangeSprites(BlockScript.SpriteConditions.ConditionB);
+        }
+        else
+        {
+            blockScript.ChangeSprites(BlockScript.SpriteConditions.ConditionC);
+        }
     }
 
         public void DeleteBlock(NodeScript neighbour)
