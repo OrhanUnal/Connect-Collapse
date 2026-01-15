@@ -18,6 +18,7 @@ public class NodeScript
 
     public NodeScript(GameObject block)
     {
+        GameManager.destroyBlocks += DeleteBlock;
         this.block = block;
         blastableNeighbourCount = 0;
         currentBlockType = block.GetComponent<BlockScript>().GetBlockType();
@@ -52,10 +53,20 @@ public class NodeScript
         }
     }
 
-        public void DeleteBlock(NodeScript neighbour)
+    public void DeleteBlock(int idToDestroy)
+    {
+        if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 2)
         {
-            //deletion and cascading alghorithm
-            return;
+            //destroy and cascading mechanism
         }
-    
+        return;
+    }
+
+    #region Getters
+    public int GetMatchedBlocksId()
+    { 
+        return matchedBlocksId; 
+    }
+    #endregion
+
 }

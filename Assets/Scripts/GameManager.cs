@@ -1,8 +1,12 @@
+using System;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
     public static GameManager instance;
+    public static event Action<int, int> handleInput;
+    public delegate void DestroyBlocks(int id);
+    public static DestroyBlocks destroyBlocks;
     [SerializeField] int conditionA;
     [SerializeField] int conditionB;
     [SerializeField] int conditionC;
@@ -22,7 +26,18 @@ public class GameManager : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        
+        if (Input.GetMouseButtonDown(0))
+        {
+            Debug.Log("MOUSE DOWN");
+            Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
+            RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
+            Debug.Log(hit.collider);
+            if (hit.collider && hit.collider.gameObject.GetComponent<BlockScript>())
+            {
+                handleInput?.Invoke(hit.collider.gameObject.GetComponent<BlockScript>().xIndex, hit.collider.GetComponent<BlockScript>().yIndex);
+                Debug.Log("INVOKE FROM MANAGER");
+            }
+        }
     }
 
     #region Getters

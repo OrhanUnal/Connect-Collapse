@@ -19,6 +19,7 @@ public class BoardScript : MonoBehaviour
         height = GameManager.instance.GetHeightOfTheBoard();
         maxColors = GameManager.instance.GetMaxColors();
         if (maxColors > 6) maxColors = 6;
+        GameManager.handleInput += HandleInput;
         InitBoard();
     }
 
@@ -86,6 +87,14 @@ public class BoardScript : MonoBehaviour
         if (yIndex < height - 1)
             CheckNeighbour(nodesArray[xIndex, yIndex + 1], searchingType, list);
         return;
+    }
+
+    private void HandleInput(int xIndex, int yIndex)
+    {
+        Debug.Log("GOT THE INVOKE FROM MANAGER");
+        int idToDestroyObjects = nodesArray[xIndex, yIndex].GetMatchedBlocksId();
+        GameManager.destroyBlocks?.Invoke(idToDestroyObjects);
+        Debug.Log("INVOKE FROM BORAD");
     }
 }
 
