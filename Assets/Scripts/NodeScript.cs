@@ -57,6 +57,7 @@ public class NodeScript
     {
         if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 2)
         {
+            UnityEngine.Object.Destroy(block);
             //destroy and cascading mechanism
         }
         return;

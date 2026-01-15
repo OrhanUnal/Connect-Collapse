@@ -28,14 +28,11 @@ public class GameManager : MonoBehaviour
     {
         if (Input.GetMouseButtonDown(0))
         {
-            Debug.Log("MOUSE DOWN");
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
-            Debug.Log(hit.collider);
             if (hit.collider && hit.collider.gameObject.GetComponent<BlockScript>())
             {
                 handleInput?.Invoke(hit.collider.gameObject.GetComponent<BlockScript>().xIndex, hit.collider.GetComponent<BlockScript>().yIndex);
-                Debug.Log("INVOKE FROM MANAGER");
             }
         }
     }

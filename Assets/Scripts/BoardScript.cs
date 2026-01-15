@@ -6,6 +6,8 @@ public class BoardScript : MonoBehaviour
     [SerializeField] float blocksDistance; 
     [SerializeField] GameObject[] blockPrefabs;
 
+    public GameObject BlockParent;
+
     private int width;
     private int height;
     private int maxColors;
@@ -41,6 +43,7 @@ public class BoardScript : MonoBehaviour
                 positionOfNode *= blocksDistance;
                 int randomIndex = Random.Range(0, maxColors);
                 GameObject block = Instantiate(blockPrefabs[randomIndex], positionOfNode, Quaternion.identity);
+                block.transform.SetParent(BlockParent.transform);
                 block.GetComponent<BlockScript>().SetPosition(x, y);
                 nodesArray[x,y] = new NodeScript(block);
             }
@@ -91,10 +94,8 @@ public class BoardScript : MonoBehaviour
 
     private void HandleInput(int xIndex, int yIndex)
     {
-        Debug.Log("GOT THE INVOKE FROM MANAGER");
         int idToDestroyObjects = nodesArray[xIndex, yIndex].GetMatchedBlocksId();
         GameManager.destroyBlocks?.Invoke(idToDestroyObjects);
-        Debug.Log("INVOKE FROM BORAD");
     }
 }
 
