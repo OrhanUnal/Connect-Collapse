@@ -68,7 +68,7 @@ public class NodeScript
 
     public void DeleteBlock(int idToDestroy)
     {
-        if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 2)
+        if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 1)
         {
             if (block != null)
                 UnityEngine.Object.Destroy(block);

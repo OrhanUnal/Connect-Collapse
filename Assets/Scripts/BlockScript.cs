@@ -42,7 +42,8 @@ public class BlockScript : MonoBehaviour
 
     public IEnumerator MoveTarget(Vector2 positionOfDestination)
     {
-        float duration = 0.4f;
+        if(GameManager.instance.currentState == GameManager.stateOfBoard.Idle) GameManager.instance.currentState = GameManager.stateOfBoard.Falling;
+        float duration = 0.16f;
         float elapsedTime = 0f;
         Vector2 startPosition = transform.position;
         while (elapsedTime < duration)
@@ -52,13 +53,8 @@ public class BlockScript : MonoBehaviour
             elapsedTime += Time.deltaTime;
             yield return null;
         }
-
         transform.position = positionOfDestination;
-    }
-
-    public BlockType GetBlockType()
-    {
-        return type;
+        GameManager.instance.currentState = GameManager.stateOfBoard.Idle;
     }
 
     public void ChangeSprites(SpriteConditions conditionThatMatched)
@@ -81,5 +77,9 @@ public class BlockScript : MonoBehaviour
                 _spriteRenderer.sprite = sprites[0];
                 break;
         }
+    }
+    public BlockType GetBlockType()
+    {
+        return type;
     }
 }

@@ -10,13 +10,16 @@ public class BoardScript : MonoBehaviour
     public GameObject BlockParent;
     public static BoardScript instance;
 
-    private HashSet<int> columnsNeedingGravity = new HashSet<int>();
     private int width;
     private int height;
     private int maxColors;
     private float middleOfTheBoardX;
     private float middleOfTheBoardY;
+    private bool deadLock;
+    private bool solvingDeadlock = false;
     private NodeScript[,] nodesArray;
+    private List<GameObject> allBlocksList = new List<GameObject>();
+    private HashSet<int> columnsNeedingGravity = new HashSet<int>();
 
     private void Start()
     {
@@ -24,7 +27,6 @@ public class BoardScript : MonoBehaviour
         width = GameManager.instance.GetWidthOfTheBoard();
         height = GameManager.instance.GetHeightOfTheBoard();
         maxColors = GameManager.instance.GetMaxColors();
-        if (maxColors > 6) maxColors = 6;
         InitBoard();
     }
 
@@ -42,6 +44,9 @@ public class BoardScript : MonoBehaviour
 
     private void InitBoard()
     {
+        if (maxColors > 6) maxColors = 6;
+        if (width < 2) width = 2;
+        if (height < 2) height = 2;
         nodesArray = new NodeScript[width, height];
         middleOfTheBoardX = (float)(width - 1) / 2;
         middleOfTheBoardY = (float)(height - 1) / 2;
@@ -68,6 +73,7 @@ public class BoardScript : MonoBehaviour
 
     private void ScanBoard()
     {
+        deadLock = true;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -91,6 +97,12 @@ public class BoardScript : MonoBehaviour
                 }
             }
         }
+        if (deadLock && !solvingDeadlock)
+        {
+            solvingDeadlock = true;
+            GameManager.instance.currentState = GameManager.stateOfBoard.Deadlock;
+            StartCoroutine(ResolveDeadLock());
+        }
     }
 
     private void CheckNeighbour(NodeScript nodeToScan, BlockScript.BlockType searchingType, MatchedBlocks list)
@@ -98,10 +110,7 @@ public class BoardScript : MonoBehaviour
         int xIndex = nodeToScan.xIndex;
         int yIndex = nodeToScan.yIndex;
 
-        if (nodeToScan.currentBlockType != searchingType ||
-            nodeToScan.visited ||
-            nodeToScan.block == null ||
-            searchingType == BlockScript.BlockType.None)
+        if (nodeToScan.currentBlockType != searchingType || nodeToScan.visited || nodeToScan.block == null || searchingType == BlockScript.BlockType.None)
             return;
 
         nodeToScan.visited = true;
@@ -116,6 +125,8 @@ public class BoardScript : MonoBehaviour
             CheckNeighbour(nodesArray[xIndex + 1, yIndex], searchingType, list);
         if (yIndex < height - 1)
             CheckNeighbour(nodesArray[xIndex, yIndex + 1], searchingType, list);
+        if (list.countOfBlocks > 1)
+            deadLock = false;
         return;
     }
 
@@ -148,15 +159,15 @@ public class BoardScript : MonoBehaviour
                     nodesArray[x, y].ResetNode();
                     GameObject blockAbove = nodesArray[x, y + 1].block;
                     if (blockAbove == null) continue;
-                    BlockScript blockScript = blockAbove.GetComponent<BlockScript>();
-                    if (blockScript == null) continue;
+                    BlockScript blockAboveScript = blockAbove.GetComponent<BlockScript>();
+                    if (blockAboveScript == null) continue;
                     nodesArray[x, y].block = blockAbove;
-                    blockScript.SetIndicies(x, y);
-                    nodesArray[x, y].currentBlockType = blockScript.GetBlockType();
+                    blockAboveScript.SetIndicies(x, y);
+                    nodesArray[x, y].currentBlockType = blockAboveScript.GetBlockType();
                     nodesArray[x, y + 1].ResetNode();
 
                     Vector2 targetPos = new Vector2(x - middleOfTheBoardX, y - middleOfTheBoardY) * blocksDistance;
-                    StartCoroutine(blockScript.MoveTarget(targetPos));
+                    StartCoroutine(blockAboveScript.MoveTarget(targetPos));
 
                     moved = true;
                 }
@@ -168,10 +179,8 @@ public class BoardScript : MonoBehaviour
         SpawnNewBlocksInColumn(x);
 
         columnsNeedingGravity.Remove(x);
-
-        yield return new WaitForSeconds(0.3f);
-        ScanBoard();
     }
+    
     private void SpawnNewBlocksInColumn(int x)
     {
         for (int y = height - 1; y >= 0; y--)
@@ -194,6 +203,91 @@ public class BoardScript : MonoBehaviour
                 Vector2 targetPos = new Vector2(x - middleOfTheBoardX, y - middleOfTheBoardY) * blocksDistance;
                 StartCoroutine(blockScript.MoveTarget(targetPos));
             }
+        }
+        ScanBoard();
+    }
+    
+    private IEnumerator ResolveDeadLock()
+    {
+        allBlocksList.Clear();
+        yield return new WaitForSeconds(0.7f);
+        //listeyi olustur
+        foreach (NodeScript node in nodesArray)
+        {
+            allBlocksList.Add(node.block);
+            node.block = null;
+        }
+        //garanti yerlesecekleri sec
+        GameObject firstGuarenteedBlock = allBlocksList[0];
+        GameObject secondGuarenteedBlock = null;
+        BlockScript.BlockType firstBlockType = firstGuarenteedBlock.GetComponent<BlockScript>().GetBlockType();
+        allBlocksList.Remove(firstGuarenteedBlock);
+        foreach (GameObject block in allBlocksList)
+        {
+            if (block != null && block.GetComponent<BlockScript>().GetBlockType() == firstBlockType)
+            {
+                secondGuarenteedBlock = block;
+            }
+        }
+        allBlocksList.Remove(secondGuarenteedBlock);
+        //garanti position al
+        int guaranteedX = Random.Range(0, width - 1);
+        int guaranteedY = Random.Range(0, height);
+        //garanti birinciyi yerlestir
+        nodesArray[guaranteedX, guaranteedY].block = firstGuarenteedBlock;
+        nodesArray[guaranteedX, guaranteedY].currentBlockType = firstBlockType;
+        //garanti ikinciyi yerlestir
+        nodesArray[guaranteedX + 1, guaranteedY].block = secondGuarenteedBlock;
+        nodesArray[guaranteedX + 1, guaranteedY].currentBlockType = secondGuarenteedBlock.GetComponent<BlockScript>().GetBlockType();
+        //geri kalani rastgele sirala
+        ShuffleList(allBlocksList);
+        //siraya gore yerlestir
+        int blockIndex = 0;
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                //garanti yerlestirdiklerimize ellememesi icin indexe bakmak lazim
+                if (!nodesArray[x,y].block && blockIndex < allBlocksList.Count)
+                {   
+                    GameObject block = allBlocksList[blockIndex];
+                    nodesArray[x, y].block = block;
+                    if (block != null)
+                        nodesArray[x, y].currentBlockType = block.GetComponent<BlockScript>().GetBlockType();
+                    blockIndex++;
+                }
+            }
+        }
+
+        //blocklari nodelara ilerlet
+        for (int x = 0; x < width; x++)
+        {
+            for (int y = 0; y < height; y++)
+            {
+                if (nodesArray[x, y].block != null)
+                {
+                    BlockScript blockScript = nodesArray[x, y].block.GetComponent<BlockScript>();
+                    blockScript.SetIndicies(x, y);
+
+                    Vector2 targetPos = new Vector2(x - middleOfTheBoardX, y - middleOfTheBoardY) * blocksDistance;
+                    StartCoroutine(blockScript.MoveTarget(targetPos));
+                }
+            }
+        }
+
+        yield return new WaitForSeconds(0.2f);
+        ScanBoard();
+        solvingDeadlock = false;
+    }
+    
+    private void ShuffleList(List<GameObject> list)
+    {
+        for (int i = list.Count - 1; i > 0; i--)
+        {
+            int randomIndex = Random.Range(0, i + 1);
+            GameObject temp = list[i];
+            list[i] = list[randomIndex];
+            list[randomIndex] = temp;
         }
     }
 }

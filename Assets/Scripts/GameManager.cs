@@ -7,6 +7,14 @@ public class GameManager : MonoBehaviour
     public static event Action<int, int> handleInput;
     public delegate void DestroyBlocks(int id);
     public static DestroyBlocks destroyBlocks;
+    public stateOfBoard currentState;
+    public enum stateOfBoard
+    {
+        Idle,
+        Falling,
+        Deadlock
+    }
+
     [SerializeField] int conditionA;
     [SerializeField] int conditionB;
     [SerializeField] int conditionC;
@@ -17,10 +25,7 @@ public class GameManager : MonoBehaviour
     private void Awake()
     {
         instance = this;
-    }
-    void Start()
-    {
-        
+        currentState = stateOfBoard.Idle;
     }
 
     // Update is called once per frame
@@ -30,7 +35,7 @@ public class GameManager : MonoBehaviour
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
-            if (hit.collider && hit.collider.gameObject.GetComponent<BlockScript>())
+            if (hit.collider && hit.collider.gameObject.GetComponent<BlockScript>() && currentState == stateOfBoard.Idle)
             {
                 handleInput?.Invoke(hit.collider.gameObject.GetComponent<BlockScript>().xIndex, hit.collider.GetComponent<BlockScript>().yIndex);
             }
