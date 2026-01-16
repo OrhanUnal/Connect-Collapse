@@ -1,14 +1,16 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
 public class NodeScript
 {
-
     private int matchedBlocksId;
     private int blastableNeighbourCount;
     private int conditionA;
     private int conditionB;
     private int conditionC;
+
+    public static event Action<int> OnColumnNeedsGravity;
 
     public GameObject block;
     public int xIndex;
@@ -32,9 +34,12 @@ public class NodeScript
 
     public void AssignNewMatchedBlocks(int count, int id)
     {
+        if (block == null) return; // Safety check
+
         BlockScript blockScript = block.GetComponent<BlockScript>();
         blastableNeighbourCount = count;
         matchedBlocksId = id;
+
         if (blastableNeighbourCount < conditionA)
         {
             blockScript.ChangeSprites(BlockScript.SpriteConditions.Default);
@@ -53,21 +58,28 @@ public class NodeScript
         }
     }
 
+    public void ResetNode()
+    {
+        block = null;
+        visited = false;
+        blastableNeighbourCount = 0;
+        currentBlockType = BlockScript.BlockType.None;
+    }
+
     public void DeleteBlock(int idToDestroy)
     {
         if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 2)
         {
-            UnityEngine.Object.Destroy(block);
-            //destroy and cascading mechanism
+            if (block != null)
+                UnityEngine.Object.Destroy(block);
+            OnColumnNeedsGravity?.Invoke(xIndex);
         }
-        return;
     }
 
     #region Getters
     public int GetMatchedBlocksId()
-    { 
-        return matchedBlocksId; 
+    {
+        return matchedBlocksId;
     }
     #endregion
-
 }
