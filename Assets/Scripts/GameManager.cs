@@ -3,9 +3,10 @@ using UnityEngine;
 
 public class GameManager : MonoBehaviour
 {
-    public static GameManager instance;
+    public static int activeAnimation;
     public static event Action<int, int> handleInput;
     public delegate void DestroyBlocks(int id);
+    public static GameManager instance;
     public static DestroyBlocks destroyBlocks;
     public stateOfBoard currentState;
     public enum stateOfBoard
@@ -26,20 +27,22 @@ public class GameManager : MonoBehaviour
 
     private void Awake()
     {
+        activeAnimation = 0;
         instance = this;
         currentState = stateOfBoard.Idle;
     }
 
-    // Update is called once per frame
     void Update()
     {
-        if (Input.GetMouseButtonDown(0))
+        if (Input.GetMouseButtonDown(0) && currentState == stateOfBoard.Idle)
         {
             Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
             RaycastHit2D hit = Physics2D.Raycast(ray.origin, ray.direction);
-            if (hit.collider && hit.collider.gameObject.GetComponent<BlockScript>() && currentState == stateOfBoard.Idle)
+            if (hit.collider == null) return;
+            BlockScript hitBlock = hit.collider.GetComponent<BlockScript>();
+            if (hitBlock)
             {
-                handleInput?.Invoke(hit.collider.gameObject.GetComponent<BlockScript>().xIndex, hit.collider.GetComponent<BlockScript>().yIndex);
+                handleInput?.Invoke(hitBlock.xIndex, hitBlock.yIndex);
             }
         }
     }

@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Android.Gradle;
 using UnityEngine;
 
 public class BoardScript : MonoBehaviour
@@ -14,7 +15,6 @@ public class BoardScript : MonoBehaviour
     private const float WAIT_BEFORE_SCAN = 0.2f;
 
     private float blocksDistance;
-    private Camera gameCamera;
     private int width;
     private int height;
     private int maxColors;
@@ -22,6 +22,8 @@ public class BoardScript : MonoBehaviour
     private float middleOfTheBoardY;
     private bool deadLock;
     private bool solvingDeadlock = false;
+    private Vector3 scaleOfBlocks;
+    private Camera gameCamera;
     private NodeScript[,] nodesArray;
     private List<GameObject> allBlocksList = new List<GameObject>();
     private HashSet<int> columnsNeedingGravity = new HashSet<int>();
@@ -64,7 +66,6 @@ public class BoardScript : MonoBehaviour
 
     private void CreateBoard()
     {
-        Debug.Log(middleOfTheBoardX + " " + middleOfTheBoardY);
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -73,6 +74,7 @@ public class BoardScript : MonoBehaviour
                 positionOfNode *= blocksDistance;
                 int randomIndex = Random.Range(0, maxColors);
                 GameObject block = Instantiate(blockPrefabs[randomIndex], positionOfNode, Quaternion.identity);
+                block.transform.localScale = scaleOfBlocks;
                 block.transform.SetParent(BlockParent.transform);
                 block.GetComponent<BlockScript>().SetIndicies(x, y);
                 nodesArray[x, y] = new NodeScript(block);
@@ -99,14 +101,14 @@ public class BoardScript : MonoBehaviour
             float newScaleX = blocksDistance / 2;
             float newScaleY = blocksDistance / 2;
             float newScaleZ = 1;
-            block.transform.localScale = new Vector3(newScaleX, newScaleY, newScaleZ);
+            scaleOfBlocks = new Vector3(newScaleX, newScaleY, newScaleZ);
         }
 
         middleOfTheBoardX = (float)(width - 1) / 2;
         middleOfTheBoardY = (float)(height - 1) / 2;
     }
 
-private void ScanBoard()
+    private void ScanBoard()
     {
         deadLock = true;
         for (int x = 0; x < width; x++)
@@ -171,12 +173,13 @@ private void ScanBoard()
         GameManager.destroyBlocks?.Invoke(idToDestroyObjects);
     }
 
-    private void HandleColumnGravity(int x)
+    private void HandleColumnGravity(int xIndex)
     {
-        if (!columnsNeedingGravity.Contains(x))
+
+        if (!columnsNeedingGravity.Contains(xIndex))
         {
-            columnsNeedingGravity.Add(x);
-            StartCoroutine(ApplyGravityOnColumn(x));
+            columnsNeedingGravity.Add(xIndex);
+            StartCoroutine(ApplyGravityOnColumn(xIndex));
         }
     }
 
@@ -214,11 +217,16 @@ private void ScanBoard()
         SpawnNewBlocksInColumn(x);
 
         columnsNeedingGravity.Remove(x);
+        if (columnsNeedingGravity.Count == 0)
+        {
+            yield return null;
+            ScanBoard();
+        }
     }
     
     private void SpawnNewBlocksInColumn(int x)
     {
-        for (int y = height - 1; y >= 0; y--)
+        for (int y = 0; y < height; y++)
         {
             if (nodesArray[x, y].block == null)
             {
@@ -227,6 +235,7 @@ private void ScanBoard()
 
                 int randomIndex = Random.Range(0, maxColors);
                 GameObject newBlock = Instantiate(blockPrefabs[randomIndex], spawnPos, Quaternion.identity);
+                newBlock.transform.localScale = scaleOfBlocks;
                 newBlock.transform.SetParent(BlockParent.transform);
 
                 BlockScript blockScript = newBlock.GetComponent<BlockScript>();
@@ -239,50 +248,68 @@ private void ScanBoard()
                 StartCoroutine(blockScript.MoveTarget(targetPos));
             }
         }
-        ScanBoard();
     }
-    
+
     private IEnumerator ResolveDeadLock()
     {
         allBlocksList.Clear();
         yield return new WaitForSeconds(WAIT_TIME_BEFORE_RESOLVING_DEADLOCK);
-        //listeyi olustur
+
         foreach (NodeScript node in nodesArray)
         {
             allBlocksList.Add(node.block);
             node.block = null;
         }
+
         //garanti yerlesecekleri sec
-        GameObject firstGuarenteedBlock = allBlocksList[0];
+        
         GameObject secondGuarenteedBlock = null;
-        BlockScript.BlockType firstBlockType = firstGuarenteedBlock.GetComponent<BlockScript>().GetBlockType();
-        allBlocksList.Remove(firstGuarenteedBlock);
-        foreach (GameObject block in allBlocksList)
+        GameObject firstGuarenteedBlock = null;
+        BlockScript.BlockType firstBlockType = BlockScript.BlockType.None;
+        int counter = 0;
+
+        while (secondGuarenteedBlock == null && counter < allBlocksList.Count)
         {
-            if (block != null && block.GetComponent<BlockScript>().GetBlockType() == firstBlockType)
+            firstGuarenteedBlock = allBlocksList[counter];
+            firstBlockType = firstGuarenteedBlock.GetComponent<BlockScript>().GetBlockType();
+            foreach (GameObject block in allBlocksList)
             {
-                secondGuarenteedBlock = block;
+                if (block != null && block.GetComponent<BlockScript>().GetBlockType() == firstBlockType && block != firstGuarenteedBlock)
+                {
+                    secondGuarenteedBlock = block;
+                    break;
+                }
             }
+            counter++;
         }
+        if (secondGuarenteedBlock == null)
+        {
+            Debug.Log("IMPOSSIBLE TO SOLVE");
+            yield break;
+        }
+
+        allBlocksList.Remove(firstGuarenteedBlock);
         allBlocksList.Remove(secondGuarenteedBlock);
-        //garanti position al
+
+        //garantileri yerlestir
         int guaranteedX = Random.Range(0, width - 1);
         int guaranteedY = Random.Range(0, height);
-        //garanti birinciyi yerlestir
+
         nodesArray[guaranteedX, guaranteedY].block = firstGuarenteedBlock;
         nodesArray[guaranteedX, guaranteedY].currentBlockType = firstBlockType;
-        //garanti ikinciyi yerlestir
+
         nodesArray[guaranteedX + 1, guaranteedY].block = secondGuarenteedBlock;
         nodesArray[guaranteedX + 1, guaranteedY].currentBlockType = secondGuarenteedBlock.GetComponent<BlockScript>().GetBlockType();
+
         //geri kalani rastgele sirala
         ShuffleList(allBlocksList);
+        
         //siraya gore yerlestir
         int blockIndex = 0;
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
             {
-                //garanti yerlestirdiklerimize ellememesi icin indexe bakmak lazim
                 if (!nodesArray[x,y].block && blockIndex < allBlocksList.Count)
                 {   
                     GameObject block = allBlocksList[blockIndex];

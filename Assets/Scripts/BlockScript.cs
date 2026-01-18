@@ -43,7 +43,8 @@ public class BlockScript : MonoBehaviour
 
     public IEnumerator MoveTarget(Vector2 positionOfDestination)
     {
-        if(GameManager.instance.currentState == GameManager.stateOfBoard.Idle) GameManager.instance.currentState = GameManager.stateOfBoard.Falling;
+        GameManager.activeAnimation++;
+        if (GameManager.activeAnimation == 1) GameManager.instance.currentState = GameManager.stateOfBoard.Falling;
         float duration = 0.16f;
         float elapsedTime = 0f;
         Vector2 startPosition = transform.position;
@@ -55,7 +56,8 @@ public class BlockScript : MonoBehaviour
             yield return null;
         }
         transform.position = positionOfDestination;
-        GameManager.instance.currentState = GameManager.stateOfBoard.Idle;
+        GameManager.activeAnimation--;
+        if (GameManager.activeAnimation == 0) GameManager.instance.currentState = GameManager.stateOfBoard.Idle;
     }
 
     public void ChangeSprites(SpriteConditions conditionThatMatched)
