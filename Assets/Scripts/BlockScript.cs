@@ -7,6 +7,7 @@ public class BlockScript : MonoBehaviour
     [SerializeField] Sprite[] sprites;
     public int xIndex;
     public int yIndex;
+
     private Vector2 _targetPos;
     private Vector2 _currentPos;
     private SpriteRenderer _spriteRenderer;
@@ -78,8 +79,11 @@ public class BlockScript : MonoBehaviour
                 break;
         }
     }
+
+    #region Getters
     public BlockType GetBlockType()
     {
         return type;
     }
+    #endregion
 }

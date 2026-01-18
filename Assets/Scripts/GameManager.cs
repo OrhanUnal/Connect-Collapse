@@ -20,6 +20,8 @@ public class GameManager : MonoBehaviour
     [SerializeField] int conditionC;
     [SerializeField] int widthOfTheBoard;
     [SerializeField] int heightOfTheBoard;
+    [SerializeField] float paddingToYAxis;
+    [SerializeField] float paddingToXAxis;
     [SerializeField] int maxColors;
 
     private void Awake()
@@ -66,6 +68,15 @@ public class GameManager : MonoBehaviour
     public int GetMaxColors()
     {
         return maxColors;
+    }
+
+    public float GetPaddingX()
+    {
+        return paddingToYAxis;
+    }
+    public float GetPaddingY()
+    {
+        return paddingToXAxis;
     }
     #endregion
 }

@@ -144,7 +144,7 @@ Transform:
   m_GameObject: {fileID: 458666223}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: -1.1534597, y: -3.7040367, z: -0.08565182}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -302,11 +302,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: fe66d1020fea5af4fb1b428bcd98d90a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  conditionA: 3
-  conditionB: 4
-  conditionC: 5
-  widthOfTheBoard: 10
-  heightOfTheBoard: 15
+  currentState: 0
+  conditionA: 4
+  conditionB: 5
+  conditionC: 6
+  widthOfTheBoard: 4
+  heightOfTheBoard: 7
+  paddingToYAxis: 1.8
+  paddingToXAxis: 2
   maxColors: 6
 --- !u!4 &1283535657
 Transform:
@@ -317,7 +320,7 @@ Transform:
   m_GameObject: {fileID: 1283535655}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
-  m_LocalPosition: {x: 1.5481662, y: -0.17026338, z: -0.06733308}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -352,14 +355,13 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 50ee8482dce1161409fefbc72db53a81, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  blocksDistance: 2
   blockPrefabs:
+  - {fileID: 2028714463645798351, guid: 2833f229363fa0f449cdc647826acaa8, type: 3}
+  - {fileID: 2028714463645798351, guid: 6703f0506544be641ac7d049ad43f4d7, type: 3}
   - {fileID: 2028714463645798351, guid: 6df9386c228987e459c94e2ee89fbe9f, type: 3}
   - {fileID: 2028714463645798351, guid: edb023dab1eeb8e4f8b7fc32705650c0, type: 3}
   - {fileID: 2028714463645798351, guid: 0b968cbdeaf9ac947a07616f4dde2151, type: 3}
   - {fileID: 2028714463645798351, guid: 98a199d3947247c47ac566a0f5731d86, type: 3}
-  - {fileID: 2028714463645798351, guid: 6703f0506544be641ac7d049ad43f4d7, type: 3}
-  - {fileID: 2028714463645798351, guid: 2833f229363fa0f449cdc647826acaa8, type: 3}
   BlockParent: {fileID: 458666223}
 --- !u!4 &1535610243
 Transform:
@@ -380,8 +382,8 @@ Transform:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 519420032}
   - {fileID: 1283535657}
+  - {fileID: 519420032}
   - {fileID: 619394802}
   - {fileID: 1535610243}
   - {fileID: 458666224}

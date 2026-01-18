@@ -4,12 +4,17 @@ using UnityEngine;
 
 public class BoardScript : MonoBehaviour
 {
-    [SerializeField] float blocksDistance;
     [SerializeField] GameObject[] blockPrefabs;
 
     public GameObject BlockParent;
     public static BoardScript instance;
 
+    private const float CHAIN_EFFECT_WAIT_TIME = 0.1f;
+    private const float WAIT_TIME_BEFORE_RESOLVING_DEADLOCK = 0.7f;
+    private const float WAIT_BEFORE_SCAN = 0.2f;
+
+    private float blocksDistance;
+    private Camera gameCamera;
     private int width;
     private int height;
     private int maxColors;
@@ -45,16 +50,21 @@ public class BoardScript : MonoBehaviour
     private void InitBoard()
     {
         if (maxColors > 6) maxColors = 6;
+        if (maxColors < 0) maxColors = 0;
         if (width < 2) width = 2;
+        if( width > 10) width = 10;
         if (height < 2) height = 2;
+        if (height > 10) height = 10;
+
         nodesArray = new NodeScript[width, height];
-        middleOfTheBoardX = (float)(width - 1) / 2;
-        middleOfTheBoardY = (float)(height - 1) / 2;
+        
+        SmartFitCameraAndBlocks();
         CreateBoard();
     }
 
     private void CreateBoard()
     {
+        Debug.Log(middleOfTheBoardX + " " + middleOfTheBoardY);
         for (int x = 0; x < width; x++)
         {
             for (int y = 0; y < height; y++)
@@ -70,8 +80,33 @@ public class BoardScript : MonoBehaviour
         }
         ScanBoard();
     }
+    private void SmartFitCameraAndBlocks()
+    {
+        gameCamera = Camera.main;
+        float screenHeight = gameCamera.orthographicSize * 2f;
+        float screenWidth = screenHeight * gameCamera.aspect;
 
-    private void ScanBoard()
+        float paddingX = GameManager.instance.GetPaddingX();
+        float paddingY = GameManager.instance.GetPaddingY();
+
+        float boardHeight = screenHeight - paddingX;
+        float boardWidth = screenWidth - paddingY;
+
+    blocksDistance = Mathf.Min(boardWidth / width, boardHeight / height);
+
+        foreach (GameObject block in blockPrefabs)
+        {
+            float newScaleX = blocksDistance / 2;
+            float newScaleY = blocksDistance / 2;
+            float newScaleZ = 1;
+            block.transform.localScale = new Vector3(newScaleX, newScaleY, newScaleZ);
+        }
+
+        middleOfTheBoardX = (float)(width - 1) / 2;
+        middleOfTheBoardY = (float)(height - 1) / 2;
+    }
+
+private void ScanBoard()
     {
         deadLock = true;
         for (int x = 0; x < width; x++)
@@ -159,7 +194,7 @@ public class BoardScript : MonoBehaviour
                     nodesArray[x, y].ResetNode();
                     GameObject blockAbove = nodesArray[x, y + 1].block;
                     if (blockAbove == null) continue;
-                    BlockScript blockAboveScript = blockAbove.GetComponent<BlockScript>();
+                    BlockScript blockAboveScript = nodesArray[x, y + 1].block.GetComponent<BlockScript>();
                     if (blockAboveScript == null) continue;
                     nodesArray[x, y].block = blockAbove;
                     blockAboveScript.SetIndicies(x, y);
@@ -173,7 +208,7 @@ public class BoardScript : MonoBehaviour
                 }
             }
 
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(CHAIN_EFFECT_WAIT_TIME);
         } while (moved);
 
         SpawnNewBlocksInColumn(x);
@@ -210,7 +245,7 @@ public class BoardScript : MonoBehaviour
     private IEnumerator ResolveDeadLock()
     {
         allBlocksList.Clear();
-        yield return new WaitForSeconds(0.7f);
+        yield return new WaitForSeconds(WAIT_TIME_BEFORE_RESOLVING_DEADLOCK);
         //listeyi olustur
         foreach (NodeScript node in nodesArray)
         {
@@ -275,7 +310,7 @@ public class BoardScript : MonoBehaviour
             }
         }
 
-        yield return new WaitForSeconds(0.2f);
+        yield return new WaitForSeconds(WAIT_BEFORE_SCAN);
         ScanBoard();
         solvingDeadlock = false;
     }

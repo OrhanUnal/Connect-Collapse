@@ -21,9 +21,7 @@ public class NodeScript
     public NodeScript(GameObject block)
     {
         GameManager.destroyBlocks += DeleteBlock;
-        this.block = block;
-        blastableNeighbourCount = 0;
-        currentBlockType = block.GetComponent<BlockScript>().GetBlockType();
+        AssignNewBlockToNode(block);
         xIndex = block.GetComponent<BlockScript>().xIndex;
         yIndex = block.GetComponent<BlockScript>().yIndex;
         visited = false;
@@ -31,10 +29,22 @@ public class NodeScript
         conditionB = GameManager.instance.GetConditionB();
         conditionC = GameManager.instance.GetConditionC();
     }
+    ~NodeScript()
+    {
+        GameManager.destroyBlocks -= DeleteBlock;
+    }
+
+    public void AssignNewBlockToNode(GameObject block) 
+    {
+        this.block = block;
+        blastableNeighbourCount = 0;
+        currentBlockType = block.GetComponent<BlockScript>().GetBlockType();
+        visited = false; 
+    }
 
     public void AssignNewMatchedBlocks(int count, int id)
     {
-        if (block == null) return; // Safety check
+        if (block == null) return;
 
         BlockScript blockScript = block.GetComponent<BlockScript>();
         blastableNeighbourCount = count;
@@ -71,7 +81,9 @@ public class NodeScript
         if (idToDestroy == matchedBlocksId && blastableNeighbourCount > 1)
         {
             if (block != null)
+            {
                 UnityEngine.Object.Destroy(block);
+            }
             OnColumnNeedsGravity?.Invoke(xIndex);
         }
     }
